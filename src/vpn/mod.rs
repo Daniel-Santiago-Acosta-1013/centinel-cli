@@ -121,7 +121,7 @@ impl VpnController {
         let dns = DnsServer::start(DNS_LISTEN, blocklist.clone())?;
 
         // 6) Redirigir DNS del sistema a 127.0.0.1
-        let mut dns_override = DnsOverride::new(net.primary_interface.clone());
+        let mut dns_override = DnsOverride::new(net.primary_interface.clone())?;
         dns_override.apply_local()?;
 
         // 7) Habilitar forwarding IP en kernel
