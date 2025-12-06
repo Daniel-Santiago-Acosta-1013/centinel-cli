@@ -8,6 +8,7 @@ CLI interactiva en Rust para encender una VPN local y bloquear anuncios sin romp
 - Bloquea anuncios con DNS local (NXDOMAIN) y segmenta hosts con respaldo automático.
 - Blocklist base incluida y soporte para una lista personalizada en `~/.config/sentinel/blocklist.txt`.
 - Autoconfiguración en el primer arranque: crea `~/.config/sentinel`, copia la blocklist base y verifica herramientas VPN disponibles.
+- Modo respaldo: si el modo completo afecta la conectividad, cambia automáticamente a “solo DNS + bloqueo” para no dejarte sin internet.
 
 ## Requisitos
 - Rust 1.72+ y `cargo`.
@@ -34,3 +35,8 @@ Esto deja disponible el binario `sentinel` en tu `$PATH`.
 - Sentinel hace copia de `hosts` en `~/.config/sentinel/hosts.bak` antes de añadir entradas. Al desactivar el bloqueador restaura el respaldo cuando existe.
 - Requiere `sudo` para levantar la VPN local: crea interfaz TUN, añade rutas, habilita IP forwarding, ajusta DNS y carga reglas PF en un ancla propia (`sentinel`).
 - Todas las reglas PF y ajustes de DNS/IP forwarding se revierten al apagar la VPN desde el menú.
+- Si el chequeo de salud detecta pérdida de conectividad, se revierte y se activa el modo “solo DNS” para mantener internet operativo.
+
+## Pruebas
+- Unit tests: `cargo test` (parser de hardware ports y preflight opcional).
+- Para correr el preflight real con red: `ALLOW_NET_TEST=1 cargo test`.

@@ -44,6 +44,10 @@ impl TunDevice {
         info!("TUN {} abajo", self.name);
         Ok(())
     }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
 }
 
 fn run(cmd: &str, args: &[&str]) -> Result<()> {

@@ -49,6 +49,10 @@ impl DnsOverride {
         );
         Ok(())
     }
+
+    pub fn service(&self) -> &str {
+        &self.service
+    }
 }
 
 fn current_dns(service: &str) -> Result<Vec<String>> {
@@ -87,7 +91,7 @@ fn device_to_service(device: &str) -> Result<String> {
         .ok_or_else(|| anyhow::anyhow!("No se encontró un servicio de red para el dispositivo {device}. Usa networksetup -listallhardwareports para verificar."))
 }
 
-fn parse_hwports(out: &str) -> HashMap<String, String> {
+pub fn parse_hwports(out: &str) -> HashMap<String, String> {
     let mut map = HashMap::new();
     let mut current_service: Option<String> = None;
     for line in out.lines() {
