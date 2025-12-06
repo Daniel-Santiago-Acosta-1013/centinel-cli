@@ -1,21 +1,48 @@
 use crate::app::SentinelApp;
+use crate::setup::SetupReport;
 use anyhow::Result;
+use crossterm::{
+    cursor::MoveTo,
+    execute,
+    terminal::{Clear, ClearType},
+};
 use dialoguer::{Select, theme::ColorfulTheme};
 use log::{error, info};
+use std::io::{Write, stdin, stdout};
 
-pub fn run(app: &mut SentinelApp) -> Result<()> {
-    banner();
+pub fn run(app: &mut SentinelApp, setup: &SetupReport) -> Result<()> {
+    let mut first_screen = true;
     loop {
+        clear_screen()?;
+        banner();
+        if first_screen {
+            print_setup(setup);
+            first_screen = false;
+        }
+        show_brief(app);
         match menu()? {
-            MenuChoice::StartVpn => handle(app, "Activando VPN", |a| a.vpn.start())?,
-            MenuChoice::StopVpn => handle(app, "Desactivando VPN", |a| a.vpn.stop())?,
+            MenuChoice::StartVpn => {
+                handle(app, "Activando VPN local", |a| a.vpn.start())?;
+                wait_for_enter();
+            }
+            MenuChoice::StopVpn => {
+                handle(app, "Desactivando VPN", |a| a.vpn.stop())?;
+                wait_for_enter();
+            }
             MenuChoice::StartAdblock => {
-                handle(app, "Activando bloqueador", |a| a.adblock.enable())?
+                handle(app, "Activando bloqueo de anuncios", |a| a.adblock.enable())?;
+                wait_for_enter();
             }
             MenuChoice::StopAdblock => {
-                handle(app, "Desactivando bloqueador", |a| a.adblock.disable())?
+                handle(app, "Desactivando bloqueo de anuncios", |a| {
+                    a.adblock.disable()
+                })?;
+                wait_for_enter();
             }
-            MenuChoice::Status => show_status(app),
+            MenuChoice::Status => {
+                show_status(app);
+                wait_for_enter();
+            }
             MenuChoice::Quit => {
                 println!("Hasta luego. Mantén la red limpia 👋");
                 break;
@@ -35,6 +62,11 @@ fn banner() {
 \\____/\\____/_/ /_/\\__/_/\\___/\\__/\\___/_/   sentinel
 "
     );
+}
+
+fn clear_screen() -> Result<()> {
+    execute!(stdout(), Clear(ClearType::All), MoveTo(0, 0))?;
+    Ok(())
 }
 
 #[derive(Copy, Clone)]
@@ -74,6 +106,49 @@ fn menu() -> Result<MenuChoice> {
     Ok(choice)
 }
 
+fn print_setup(setup: &SetupReport) {
+    println!("Config dir: {}", setup.config_dir.display());
+    if let Some(path) = &setup.blocklist_path {
+        if setup.created_blocklist {
+            println!("Blocklist inicial creada en {}", path.display());
+        } else {
+            println!("Blocklist personalizada encontrada en {}", path.display());
+        }
+    }
+    let vpn_dir = setup.config_dir.join("vpn");
+    if setup.created_vpn_dir {
+        println!(
+            "Se creó la carpeta VPN local en {} (archivo sentinel.conf generado automáticamente).",
+            vpn_dir.display()
+        );
+    } else {
+        println!(
+            "Carpeta VPN local: {} (usa sentinel.conf para ajustes avanzados).",
+            vpn_dir.display()
+        );
+    }
+    println!(
+        "Ruta de configuración de la VPN embebida: {}",
+        setup.vpn_config_path.display()
+    );
+    println!("Herramientas VPN detectadas: {}", setup.tools.summary());
+    if !setup.tools.any() {
+        println!("→ No se detecta soporte embebido (debería ser 'embebida').");
+    }
+    println!();
+}
+
+fn show_brief(app: &SentinelApp) {
+    let status = app.status();
+    println!(
+        "VPN: {} | Anuncios: {} | Herramientas: {}",
+        status.vpn.as_str(),
+        status.adblock.as_str(),
+        app.tools.summary()
+    );
+    println!();
+}
+
 fn handle<F>(app: &mut SentinelApp, label: &str, action: F) -> Result<()>
 where
     F: FnOnce(&mut SentinelApp) -> Result<()>,
@@ -99,4 +174,11 @@ fn show_status(app: &SentinelApp) {
     println!("• VPN: {}", status.vpn.as_str());
     println!("• Bloqueo de anuncios: {}", status.adblock.as_str());
     println!();
+}
+
+fn wait_for_enter() {
+    print!("Presiona Enter para continuar...");
+    let _ = stdout().flush();
+    let mut buffer = String::new();
+    let _ = stdin().read_line(&mut buffer);
 }

@@ -1,12 +1,12 @@
 use crate::adblock::{AdblockController, AdblockState};
 use crate::config::Config;
-use crate::vpn::{VpnController, VpnState};
+use crate::vpn::{VpnController, VpnState, VpnTools};
 use anyhow::Result;
 
 pub struct SentinelApp {
-    pub config: Config,
     pub vpn: VpnController,
     pub adblock: AdblockController,
+    pub tools: VpnTools,
 }
 
 pub struct Status {
@@ -15,13 +15,13 @@ pub struct Status {
 }
 
 impl SentinelApp {
-    pub fn new(config: Config) -> Result<Self> {
-        let vpn = VpnController::new(config.vpn.clone());
+    pub fn new(config: Config, tools: VpnTools) -> Result<Self> {
+        let vpn = VpnController::new(config.clone(), tools.clone());
         let adblock = AdblockController::new(config.clone());
         Ok(Self {
-            config,
             vpn,
             adblock,
+            tools,
         })
     }
 

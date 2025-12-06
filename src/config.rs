@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 
 #[derive(Clone)]
 pub struct Config {
+    pub config_dir: PathBuf,
     pub blocklist_path: Option<PathBuf>,
     pub hosts_path: PathBuf,
     pub backup_path: PathBuf,
@@ -11,9 +12,7 @@ pub struct Config {
 
 #[derive(Clone)]
 pub struct VpnConfig {
-    pub wg_profile: String,
-    pub openvpn_config: PathBuf,
-    pub profile_name: String,
+    pub embedded_config: PathBuf,
 }
 
 impl Default for Config {
@@ -27,12 +26,11 @@ impl Default for Config {
         let blocklist_path = Some(config_dir.join("blocklist.txt"));
 
         let vpn = VpnConfig {
-            wg_profile: "sentinel".to_string(),
-            openvpn_config: config_dir.join("vpn").join("sentinel.ovpn"),
-            profile_name: "SentinelVPN".to_string(),
+            embedded_config: config_dir.join("vpn").join("sentinel.conf"),
         };
 
         Self {
+            config_dir,
             blocklist_path,
             hosts_path,
             backup_path,
